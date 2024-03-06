@@ -23,11 +23,11 @@ def get_jobs(pages):
 
         try:
             with requests.get(url) as resp:
-                resp.raise_for_status()  # Check for HTTP errors
+                resp.raise_for_status() 
                 content = resp.content
         except requests.RequestException as e:
             print(f"Error fetching page {page}: {e}")
-            continue  # Move to the next iteration
+            continue  
 
         soup = BeautifulSoup(content, "html.parser")
         job_posts = soup.find_all("div", class_="serp-item")
@@ -40,7 +40,10 @@ def get_jobs(pages):
             benefit_element = job_post.find("div", class_="search__job-body").find("ul", class_="search__job-list").find("li").find("p", class_="benefit")
             highlight_element = job_post.find("div", class_="search__job-body").find("ul", class_="search__job-list").find_all("li")[-2]
             career_opportunity_element = job_post.find("div", class_="search__job-body").find("ul", class_="search__job-list").find_all("li")[-1]
-            job_category_element = job_post.find("div", class_="search__job-footer").find("p", class_="search__job-category").find("span").find("u")
+            try:
+                job_category_element = job_post.find("div", class_="search__job-footer").find("p", class_="search__job-category").find("span").find("u")
+            except AttributeError:
+                job_category_element="#N/A"
             post_date_element = job_post.find("p", class_="search__job-posted")
 
             # Check if the elements exist before accessing the text attribute
@@ -50,8 +53,12 @@ def get_jobs(pages):
             location = location_element.text.strip() if location_element else "N/A"
             benefit = benefit_element.text.strip() if benefit_element else "N/A"
             highlight = highlight_element.text.strip() if highlight_element else "N/A"
+            
             career_opportunity = career_opportunity_element.text.strip() if career_opportunity_element else "N/A"
-            job_category = job_category_element.text.strip() if job_category_element else "N/A"
+            try:
+                job_category = job_category_element.text.strip() if job_category_element else "N/A"
+            except AttributeError:
+                job_category = '#N/A'
             post_date = post_date_element.text.strip() if post_date_element else "N/A"
 
             job_titles.append(job_title)
@@ -85,27 +92,37 @@ def get_jobs(pages):
     return df
 
 
+
+
 def get_job_details(df):
-    headers = ['job_title', 'desc', 'types', 'job_link', 'load_date']
-    data = pd.DataFrame(columns=headers)
 
-    links = df['Link'].to_list()
+    headers = ['job_title','desc','types','job_link','load_date']
+    data=pd.DataFrame(columns=headers)
 
-    # Initialize lists outside the loop
-    job_titles = []
-    j_link = []
-    types_desc = []
-    types_req = []
-    job_desc = []
-    job_req = []
-    load_date = []
-
-    for url in tqdm(links):
+    job_titles=[]
+    j_link=[]
+    types_desc=[]
+    types_req=[]
+    job_desc=[]
+    job_req=[]
+    load_date=[]
+   
+    links= df['Link'].to_list()
+    #links=["https://www.jobnet.com.mm/job/project-manager-pmo-hana-microfinance-ltd/94611"]
+    for url in tqdm(links[:3]):
         with requests.get(url) as resp:
-            resp.raise_for_status()
+            resp.raise_for_status()  
             content = resp.content
 
+        job_titles=[]
+        j_link=[]
+        types_desc=[]
+        types_req=[]
+        job_desc=[]
+        job_req=[]
+        load_date=[]
         soup = BeautifulSoup(content, "html.parser")
+
 
         title_element = soup.find("p", class_="job-details__card-title")
         title = title_element.get_text() if title_element else "N/A"
@@ -113,25 +130,43 @@ def get_job_details(df):
 
         jd_element = soup.find("div", class_='job-details__description-wrapper job-details__description-wrapper-1')
         jd = [li.text.strip() for li in jd_element.find_all('li')] if jd_element else ["N/A"]
-        job_desc.extend(jd)
+        for i in jd:
+            job_desc.append(i)
 
         requirement_element = soup.find("div", class_='job-details__description-wrapper job-details__description-wrapper-3')
         requirement = [li.text.strip() for li in requirement_element.find_all('li')] if requirement_element else ["N/A"]
-        job_req.extend(requirement)
 
-        types_desc.extend(["Job Descriptions"] * len(jd))
-        types_req.extend(["Requirements"] * len(requirement))
+        for r in requirement:
+            job_req.append(r)
 
-        j_link.extend([url] * len(jd))
-        load_date.extend([datetime.now()] * len(jd))
+        
+        types_desc.append('Job Descriptions')
+        td=types_desc*len(jd)
+        
+        
+        types_req.append("Requirements")
+        tr=types_req*len(requirement)
+        
+        
+        types=td+tr
+        
+        job_desc.extend(job_req)
 
-    new_df = pd.DataFrame({
-        'job_title': job_titles,
-        'desc': job_desc,
-        'types': types_desc + types_req,
-        'job_link': j_link,
-        'load_date': load_date
-    })
+        jt=job_titles*len(job_desc)
 
-    rd = pd.concat([data, new_df], ignore_index=True)
-    return rd
+        j_link.append(url)
+        lin=j_link*len(job_desc)
+
+        load_date.append(datetime.now())
+        ld=load_date*len(job_desc)
+
+    new_df= pd.DataFrame({
+            'job_title':jt,
+            'desc':job_desc,
+            'types':types,
+            'job_link':lin,
+            'load_date':ld
+        })
+        
+    
+    return pd.concat([data,new_df],ignore_index=True)
