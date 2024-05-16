@@ -8,5 +8,3 @@
 #### For scripting language, I used python to utalize BS4, pandas and request libraries to extract publically available data from the jobnet.com website.
 
 
-### Diagram 
-![alt text](https://github.com/plebnyan/plebnyan.github.io/blob/main/imgs/jobnet-diagram.png?raw=true)
