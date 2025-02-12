@@ -13,28 +13,29 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # Create a directory for the Lambda dependencies
           mkdir -p python
-          
-          # Install pandas and any other dependencies to that directory
           pip install pandas -t python/
-
-          # If you need other dependencies, add them here:
-          # pip install numpy -t python/
 
       - name: Create Zip file for Lambda function
         run: |
-          # Zip the lambda code and dependencies
-          zip -r code.zip . -x "*.git*" -x "*.github*"  # Exclude git files, etc.
-          # Add the python dependencies
+          zip -r code.zip . -x "*.git*" -x "*.github*"  # Exclude unwanted files
           cd python && zip -r ../code.zip .
 
-      - name: AWS CLI v2
+      - name: Upload Lambda ZIP to S3
+        run: |
+          aws s3 cp code.zip s3://jobnet-pipeline/lambda/code.zip
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+
+      - name: AWS CLI v2 (Update Lambda)
         uses: imehedi/actions-awscli-v2@latest
         with:
           args: "lambda update-function-code \
             --function-name arn:aws:lambda:ap-southeast-2:891376957156:function:Jobnet-Web-Scraping \
-            --zip-file fileb://code.zip"
+            --s3-bucket <your-bucket-name> \
+            --s3-key lambda/code.zip"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
