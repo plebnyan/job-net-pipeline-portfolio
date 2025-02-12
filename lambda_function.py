@@ -13,14 +13,11 @@ def lambda_handler(event, context):
     s3_client = boto3.client("s3")
     csv_buffer = StringIO()
 
-    # Fetch job listings
     last_page = get_last_page()
     jobs = get_jobs(last_page)
 
-    # Convert DataFrame to CSV
     jobs.to_csv(csv_buffer, index=False)
 
-    # Upload to S3
     s3_client.put_object(
         Bucket=bucket_name,
         Key=file_name,
