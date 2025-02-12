@@ -16,10 +16,33 @@ jobs:
           mkdir -p python
           pip install pandas -t python/
 
-      - name: Create Zip file for Lambda function
+      - name: Create Zip file for Lambda Layer
         run: |
-          zip -r code.zip . -x "*.git*" -x "*.github*"  # Exclude unwanted files
-          cd python && zip -r ../code.zip .  # Ensure dependencies are included in the zip
+          cd python && zip -r ../pandas_layer.zip .
+          
+      - name: Upload Lambda Layer to S3
+        run: |
+          aws s3 cp pandas_layer.zip s3://jobnet-pipeline/lambda/pandas_layer.zip
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "ap-southeast-2"
+
+      - name: AWS CLI v2 (Publish Lambda Layer)
+        uses: imehedi/actions-awscli-v2@latest
+        with:
+          args: "lambda publish-layer-version \
+            --layer-name pandas-layer \
+            --zip-file s3://jobnet-pipeline/lambda/pandas_layer.zip \
+            --compatible-runtimes python3.8"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "ap-southeast-2"
+
+      - name: Create Zip file for Lambda function (without dependencies)
+        run: |
+          zip -r code.zip . -x "*.git*" -x "*.github*"
 
       - name: Upload Lambda ZIP to S3
         run: |
@@ -27,7 +50,7 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: "ap-southeast-2"  # Ensure you're uploading to the correct region
+          AWS_DEFAULT_REGION: "ap-southeast-2"
 
       - name: AWS CLI v2 (Update Lambda)
         uses: imehedi/actions-awscli-v2@latest
@@ -35,8 +58,9 @@ jobs:
           args: "lambda update-function-code \
             --function-name arn:aws:lambda:ap-southeast-2:891376957156:function:Jobnet-Web-Scraping \
             --s3-bucket jobnet-pipeline \
-            --s3-key lambda/code.zip"
+            --s3-key lambda/code.zip \
+            --layers arn:aws:lambda:ap-southeast-2:891376957156:layer:pandas-layer:1"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: "ap-southeast-2"  # Ensure the Lambda region is correct
+          AWS_DEFAULT_REGION: "ap-southeast-2"
