@@ -28,12 +28,20 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: "ap-southeast-2"
 
+      - name: Download Lambda Layer Zip from S3
+        run: |
+          aws s3 cp s3://jobnet-pipeline/lambda/pandas_layer.zip pandas_layer.zip
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "ap-southeast-2"
+
       - name: AWS CLI v2 (Publish Lambda Layer)
         uses: imehedi/actions-awscli-v2@latest
         with:
           args: "lambda publish-layer-version \
             --layer-name pandas-layer \
-            --zip-file s3://jobnet-pipeline/lambda/pandas_layer.zip \
+            --zip-file fileb://pandas_layer.zip \
             --compatible-runtimes python3.8"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
