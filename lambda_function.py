@@ -1,3 +1,5 @@
+import sys
+sys.path.append("/opt/python")
 import json
 import boto3
 import pandas as pd
