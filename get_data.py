@@ -95,6 +95,7 @@ def get_jobs():
             # Introduce a delay to avoid potential rate-limiting
             #time.sleep(2)
         page += 1
+        print(f'Scraping page {page}')
         df = pd.DataFrame(
             {
                 "Titles": job_titles,
@@ -114,7 +115,7 @@ def get_jobs():
 
 
 
-    def get_job_details(df):
+def get_job_details(df):
 
         headers = ['job_title','desc','types','job_link','load_date']
         data=pd.DataFrame(columns=headers)

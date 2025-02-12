@@ -9,7 +9,7 @@ to_day = datetime.datetime.now().strftime("%Y%m%d")
 file_name = f"jobs_{to_day}.csv"
 
 
-jobs = get_jobs(65)
+jobs = get_jobs()
 
 
 jobs.to_csv(f'scraping/scraped_data/{file_name}',index=False)
