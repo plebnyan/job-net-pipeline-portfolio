@@ -1,5 +1,4 @@
 ### Building an Webscraping Pipeline
 
 
-#### Documentation is still in progress
-#### Detailed documentation will be added later......
+<h6>Detailed documentation will be added later......</h6>
